@@ -24,8 +24,8 @@
     <div id="results"></div>
 
     <script type="module">
-        // ライブラリから'pipeline'と'env'をインポートする
-        const { pipeline, env } = await import('https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.1');
+        // ライブラリから'AutoProcessor', 'AutoModel', 'env'をインポートする
+        const { AutoProcessor, AutoModel, env } = await import('https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.1');
         
         // インターネット上からのモデルダウンロードを許可する
         env.allowRemoteModels = true;
@@ -36,10 +36,10 @@
         const resultsDiv = document.getElementById('results');
         const statusDiv = document.getElementById('status');
         
-        // AIモデル（パイプラン）を準備
+        // AIモデルを準備
         statusDiv.textContent = 'AIモデルを準備中です... (初回は時間がかかります)';
-        // 'feature-extraction'（特徴抽出）という機能を持つパイプラインを準備する
-        const extractor = await pipeline('feature-extraction', 'Xenova/clip-vit-base-patch32');
+        const processor = await AutoProcessor.from_pretrained('Xenova/clip-vit-base-patch32');
+        const model = await AutoModel.from_pretrained('Xenova/clip-vit-base-patch32');
         statusDiv.textContent = '準備完了。画像をアップロードしてください。';
 
         // 検索ボタンがクリックされたときの処理
@@ -59,17 +59,17 @@
                 image.onload = async () => {
                     statusDiv.textContent = '画像をベクトルに変換しています...';
 
-                    // パイプラインを使って、画像からベクトル（embeddings）を抽出する
-                    const embeddings = await extractor(image);
+                    // ★★★ ここが以前デバッグした最終版の呼び出し方 ★★★
+                    const image_inputs = await processor([], { images: image });
+                    const { image_embeds } = await model(image_inputs);
 
                     statusDiv.textContent = '類似画像を検索しています...';
 
                     // Cloudflare WorkersのAPIにリクエスト
-                    const response = await fetch('https://image-search-api.corsicajp.workers.dev', { // ★★★ 必ずあなたのURLに書き換えてください ★★★
+                    const response = await fetch('https://image-search-api.corsicajp.workers.dev', { // ★★★ あなたのURL ★★★
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        // 抽出したベクトルデータをAPIに送る
-                        body: JSON.stringify({ query_vector: Array.from(embeddings.data) })
+                        body: JSON.stringify({ query_vector: Array.from(image_embeds.data) })
                     });
 
                     if (!response.ok) {
