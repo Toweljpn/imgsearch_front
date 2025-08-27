@@ -65,7 +65,7 @@
                     statusDiv.textContent = '類似画像を検索しています...';
 
                     // Cloudflare WorkersのAPIにリクエスト
-                    const response = await fetch(' https://image-search-api.corsicajp.workers.dev', { // ★★★ 必ずあなたのURLに書き換えてください ★★★
+                    const response = await fetch('https://image-search-api.corsicajp.workers.dev', { // ★★★ 必ずあなたのURLに書き換えてください ★★★
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         // 抽出したベクトルデータをAPIに送る
